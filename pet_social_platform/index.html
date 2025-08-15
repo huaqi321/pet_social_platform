@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毛孩子 - 宠物社交记录平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* iPhone 15 Pro Style */
+        .iphone-frame {
+            width: 390px;
+            height: 844px;
+            border-radius: 55px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            background: #000;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .iphone-screen {
+            width: 100%;
+            height: 100%;
+            border-radius: 45px;
+            overflow: hidden;
+            background: #f8f9fa;
+            position: relative;
+        }
+        
+        /* iOS Status Bar */
+        .ios-status-bar {
+            height: 44px;
+            background: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Tab Bar */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 83px;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #9ca3af;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab-item.active {
+            color: #FF8A65;
+        }
+        
+        .tab-item i {
+            font-size: 24px;
+        }
+        
+        /* Content Area */
+        .content-area {
+            height: calc(100% - 44px - 83px);
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        /* Custom Scrollbar */
+        .content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .content-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .content-area::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        /* Pet Card Slider */
+        .pet-card-container {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .pet-card-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .pet-card {
+            scroll-snap-align: center;
+            flex: 0 0 auto;
+        }
+        
+        /* Quick Actions Grid */
+        .quick-action {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .quick-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .quick-action i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        /* Dynamic Feed */
+        .feed-item {
+            background: #fff;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Interactive Elements */
+        .interactive-btn {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .interactive-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .interactive-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Orange Dot Badge */
+        .orange-dot {
+            width: 8px;
+            height: 8px;
+            background: #FF8A65;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 138, 101, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 138, 101, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 138, 101, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-8">
+    <div class="iphone-frame">
+        <div class="iphone-screen">
+            <!-- iOS Status Bar -->
+            <div class="ios-status-bar">
+                <div class="status-left">
+                    <span>9:41</span>
+                </div>
+                <div class="status-right">
+                    <i class="fas fa-signal text-xs"></i>
+                    <i class="fas fa-wifi text-xs"></i>
+                    <i class="fas fa-battery-full text-xs"></i>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- All page content will be loaded here via iframe -->
+            </div>
+            
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <div class="tab-item active" onclick="loadPage('home.html')">
+                    <i class="fas fa-home"></i>
+                    <span>记录</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('pet_circle.html')">
+                    <i class="fas fa-users"></i>
+                    <span>宠圈</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('publish.html')">
+                    <div class="relative">
+                        <i class="fas fa-plus-circle text-3xl"></i>
+                    </div>
+                    <span>发布</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('messages.html')">
+                    <div class="relative">
+                        <i class="fas fa-comment-dots"></i>
+                        <div class="orange-dot"></div>
+                    </div>
+                    <span>消息</span>
+                </div>
+                <div class="tab-item" onclick="loadPage('profile.html')">
+                    <i class="fas fa-user"></i>
+                    <span>我的</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function loadPage(pageUrl) {
+            const contentArea = document.querySelector('.content-area');
+            contentArea.innerHTML = `<iframe src="${pageUrl}" style="width: 100%; height: 100%; border: none;" frameborder="0"></iframe>`;
+            
+            // Update active tab
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.tab-item').classList.add('active');
+        }
+        
+        // Load home page by default
+        window.onload = function() {
+            loadPage('home.html');
+        };
+    </script>
+</body>
+</html>

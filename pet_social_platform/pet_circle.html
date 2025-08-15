@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宠圈 - 毛孩子</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: #fff;
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tab-nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .tab-nav-item.active {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+            color: white;
+            box-shadow: 0 1px 4px rgba(255, 138, 101, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Feed Item Styles */
+        .feed-item {
+            background: #fff;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .feed-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Question Card Styles */
+        .question-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #FF8A65;
+            transition: all 0.2s;
+        }
+        
+        .question-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .question-card.solved {
+            border-left-color: #10b981;
+        }
+        
+        .question-card.urgent {
+            border-left-color: #E65100;
+        }
+        
+        .reward-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse-glow 2s infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 3px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: 0 0 8px rgba(251, 191, 36, 0.6); }
+        }
+        
+        /* Course Card Styles */
+        .course-card {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .difficulty-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .difficulty-beginner {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .difficulty-intermediate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .difficulty-advanced {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Interactive Elements */
+        .interactive-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .interactive-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .interactive-btn:active {
+            transform: scale(0.98);
+        }
+        
+          
+        /* Search Bar Styles */
+        .search-bar input {
+            transition: all 0.3s ease;
+        }
+        
+        .search-bar input:focus {
+            box-shadow: 0 4px 12px rgba(255, 138, 101, 0.15);
+        }
+        
+        /* Waterfall Layout for Feed */
+        .feed-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            overflow-y: auto;
+            padding-bottom: 60px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .feed-grid::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .feed-post {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            width: 100%;
+            break-inside: avoid;
+            margin-bottom: 0;
+        }
+        
+        .feed-post:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Image Area (1:1方形) */
+        .image-area {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* 1:1 比例 */
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .feed-post img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Content Area */
+        .content-area {
+            padding: 12px;
+            background: #fff;
+        }
+        
+        .post-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Author Info */
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .author-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+        
+        /* Interaction Data */
+        .interaction-data {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .author-avatar {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            order: 3;
+        }
+        
+        .interaction-data i {
+            color: #ef4444;
+            font-size: 12px;
+        }
+        
+        .interaction-data span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        /* Status Indicators */
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        
+        .status-waiting {
+            background: #3b82f6;
+            animation: blink 2s infinite;
+        }
+        
+        .status-solved {
+            background: #10b981;
+        }
+        
+        .status-expired {
+            background: #6b7280;
+        }
+        
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+        
+        /* Image Gallery */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            margin-top: 8px;
+        }
+        
+        .image-gallery img {
+            width: 100%;
+            height: 60px;
+            object-fit: cover;
+        }
+        
+        /* Floating Loading Indicator */
+        .floating-loader {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50px;
+            padding: 12px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 138, 101, 0.2);
+        }
+        
+        .loader-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #FF8A65;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="p-4">
+        <!-- Search Bar -->
+        <div class="search-bar mb-4">
+            <div class="relative">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="搜索宠物、用户、动态..." class="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all">
+            </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <div class="tab-nav-item active" onclick="switchTab('feed')">
+                <i class="fas fa-stream mr-1 text-xs"></i>动态广场
+            </div>
+            <div class="tab-nav-item" onclick="switchTab('qa')">
+                <i class="fas fa-question-circle mr-1 text-xs"></i>问答社区
+            </div>
+            <div class="tab-nav-item" onclick="switchTab('course')">
+                <i class="fas fa-graduation-cap mr-1 text-xs"></i>宠物课堂
+            </div>
+        </div>
+        
+        <!-- Dynamic Feed Tab -->
+        <div id="feed" class="tab-content active">
+            <div class="feed-grid">
+                <!-- Feed Post 1 - Image Post -->
+                <div class="feed-post" onclick="viewPost(1)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop" alt="金毛犬">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">金毛宝宝的海边玩耍时光</h3>
+                        <div class="author-info">
+                            <div class="author-name">金毛妈妈</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>234</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 2 - Image Post -->
+                <div class="feed-post" onclick="viewPost(2)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=400&h=400&fit=crop" alt="波斯猫">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">布丁午睡的可爱瞬间</h3>
+                        <div class="author-info">
+                            <div class="author-name">布丁主人</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>1250</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 3 - Image Post -->
+                <div class="feed-post" onclick="viewPost(3)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1605460375648-6e191075ab8b?w=400&h=400&fit=crop" alt="哈士奇">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">哈士奇拆家现场实录</h3>
+                        <div class="author-info">
+                            <div class="author-name">哈士奇爸爸</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>901</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 4 - Cat Care Tips -->
+                <div class="feed-post" onclick="viewPost(4)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop" alt="猫咪护理">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">猫咪护理小贴士分享</h3>
+                        <div class="author-info">
+                            <div class="author-name">猫咪专家</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>567</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 5 - Image Post -->
+                <div class="feed-post" onclick="viewPost(5)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop" alt="柯基犬">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">柯基宝宝的日常训练</h3>
+                        <div class="author-info">
+                            <div class="author-name">柯基铲屎官</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>445</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 6 - Image Post -->
+                <div class="feed-post" onclick="viewPost(6)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=400&h=400&fit=crop" alt="英短猫">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">英短猫的优雅生活</h3>
+                        <div class="author-info">
+                            <div class="author-name">英短爱好者</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>723</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 7 - Image Post -->
+                <div class="feed-post" onclick="viewPost(7)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=400&h=400&fit=crop" alt="萨摩耶">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">萨摩耶的冬日雪景</h3>
+                        <div class="author-info">
+                            <div class="author-name">萨摩耶妈妈</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>654</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feed Post 8 - Dog Training -->
+                <div class="feed-post" onclick="viewPost(8)">
+                    <div class="image-area">
+                        <img src="https://images.unsplash.com/photo-1450778869880-7f3e9d6c0e1c?w=400&h=400&fit=crop" alt="狗狗训练">
+                    </div>
+                    <div class="content-area">
+                        <h3 class="post-title">狗狗训练心得分享</h3>
+                        <div class="author-info">
+                            <div class="author-name">训犬师小王</div>
+                            <div class="interaction-data">
+                                <i class="fas fa-heart"></i>
+                                <span>15680</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Q&A Tab -->
+        <div id="qa" class="tab-content">
+            <!-- Urgent Questions -->
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-800 mb-3">💰 悬赏问答</h3>
+                
+                <div class="question-card urgent">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="status-indicator status-waiting"></span>
+                            <span class="font-semibold text-gray-800">猫咪不吃东西怎么办？</span>
+                        </div>
+                        <div class="reward-badge">￥50</div>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">我家猫咪已经2天没吃东西了，精神也不太好，很担心...</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span><i class="fas fa-user"></i> 猫咪新手</span>
+                            <span><i class="fas fa-comment"></i> 12个回答</span>
+                            <span><i class="fas fa-clock"></i> 1小时前</span>
+                        </div>
+                        <button class="text-blue-500 text-sm font-medium">去回答</button>
+                    </div>
+                </div>
+                
+                <div class="question-card">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="status-indicator status-waiting"></span>
+                            <span class="font-semibold text-gray-800">狗狗经常挠耳朵是为什么？</span>
+                        </div>
+                        <div class="reward-badge">￥20</div>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">最近发现狗狗总是用后腿挠耳朵，是不是有什么问题？</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span><i class="fas fa-user"></i> 金毛主人</span>
+                            <span><i class="fas fa-comment"></i> 8个回答</span>
+                            <span><i class="fas fa-clock"></i> 3小时前</span>
+                        </div>
+                        <button class="text-blue-500 text-sm font-medium">去回答</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Regular Questions -->
+            <div>
+                <h3 class="font-semibold text-gray-800 mb-3">🤔 普通问答</h3>
+                
+                <div class="question-card solved">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="status-indicator status-solved"></span>
+                        <span class="font-semibold text-gray-800">如何给猫咪剪指甲？</span>
+                        <span class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">已解决</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">第一次给猫咪剪指甲，有什么注意事项吗？</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span><i class="fas fa-user"></i> 新手铲屎官</span>
+                            <span><i class="fas fa-check"></i> 最佳答案</span>
+                            <span><i class="fas fa-clock"></i> 昨天</span>
+                        </div>
+                        <button class="text-blue-500 text-sm font-medium">查看答案</button>
+                    </div>
+                </div>
+                
+                <div class="question-card">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="status-indicator status-waiting"></span>
+                        <span class="font-semibold text-gray-800">狗狗挑食怎么办？</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">我家狗狗最近变得很挑食，狗粮都不爱吃了...</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span><i class="fas fa-user"></i> 柯基妈妈</span>
+                            <span><i class="fas fa-comment"></i> 15个回答</span>
+                            <span><i class="fas fa-clock"></i> 2天前</span>
+                        </div>
+                        <button class="text-blue-500 text-sm font-medium">去回答</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Tab -->
+        <div id="course" class="tab-content">
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Course Card 1 -->
+                <div class="course-card">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=200&h=120&fit=crop" alt="课程封面" class="w-full h-24 object-cover">
+                        <div class="difficulty-badge difficulty-beginner">新手</div>
+                    </div>
+                    <div class="p-3">
+                        <h4 class="font-semibold text-gray-800 text-sm mb-1">新手养猫必知</h4>
+                        <p class="text-xs text-gray-600 mb-2">从0到1教你科学养猫</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1">
+                                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=20&h=20&fit=crop&crop=face" alt="讲师" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500">猫咪专家</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <i class="fas fa-star text-yellow-400"></i>
+                                <span>4.8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Card 2 -->
+                <div class="course-card">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=200&h=120&fit=crop" alt="课程封面" class="w-full h-24 object-cover">
+                        <div class="difficulty-badge difficulty-intermediate">进阶</div>
+                    </div>
+                    <div class="p-3">
+                        <h4 class="font-semibold text-gray-800 text-sm mb-1">狗狗行为训练</h4>
+                        <p class="text-xs text-gray-600 mb-2">30天养成乖狗狗</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=20&h=20&fit=crop&crop=face" alt="讲师" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500">训犬师小王</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <i class="fas fa-star text-yellow-400"></i>
+                                <span>4.9</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Card 3 -->
+                <div class="course-card">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200&h=120&fit=crop" alt="课程封面" class="w-full h-24 object-cover">
+                        <div class="difficulty-badge difficulty-beginner">新手</div>
+                    </div>
+                    <div class="p-3">
+                        <h4 class="font-semibold text-gray-800 text-sm mb-1">宠物营养搭配</h4>
+                        <p class="text-xs text-gray-600 mb-2">科学喂养指南</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1">
+                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=20&h=20&fit=crop&crop=face" alt="讲师" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500">营养师小李</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <i class="fas fa-star text-yellow-400"></i>
+                                <span>4.7</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Card 4 -->
+                <div class="course-card">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=200&h=120&fit=crop" alt="课程封面" class="w-full h-24 object-cover">
+                        <div class="difficulty-badge difficulty-advanced">专业</div>
+                    </div>
+                    <div class="p-3">
+                        <h4 class="font-semibold text-gray-800 text-sm mb-1">宠物急救知识</h4>
+                        <p class="text-xs text-gray-600 mb-2">关键时刻能救命</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1">
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=20&h=20&fit=crop&crop=face" alt="讲师" class="w-5 h-5 rounded-full">
+                                <span class="text-xs text-gray-500">兽医张医生</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <i class="fas fa-star text-yellow-400"></i>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+      </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Update tab navigation
+            document.querySelectorAll('.tab-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+        
+        function viewPost(postId) {
+            alert(`查看动态详情 #${postId}`);
+        }
+        
+        // Format like count with K/W units
+        function formatLikeCount(count) {
+            if (count >= 10000) {
+                return (count / 10000).toFixed(1) + '万';
+            } else if (count >= 1000) {
+                return (count / 1000).toFixed(1) + 'K';
+            }
+            return count.toString();
+        }
+        
+        // Initialize like count formatting on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format existing like counts
+            document.querySelectorAll('.interaction-data span').forEach(span => {
+                const count = parseInt(span.textContent);
+                if (!isNaN(count)) {
+                    span.textContent = formatLikeCount(count);
+                }
+            });
+        });
+        
+        // Add interactive feedback for feed posts
+        document.querySelectorAll('.feed-post').forEach(post => {
+            post.addEventListener('click', function() {
+                // Add click animation
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+        
+        // Add interactive feedback for other buttons
+        document.querySelectorAll('.interactive-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (this.querySelector('.fa-heart')) {
+                    this.classList.toggle('text-red-500');
+                    const icon = this.querySelector('i');
+                    const count = this.querySelector('span');
+                    if (icon.classList.contains('far')) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        count.textContent = parseInt(count.textContent) + 1;
+                    } else {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        count.textContent = parseInt(count.textContent) - 1;
+                    }
+                }
+            });
+        });
+        
+          
+        // Infinite scrolling for feed
+        let currentPage = 1;
+        let isLoading = false;
+        const feedGrid = document.querySelector('.feed-grid');
+        
+        function loadMorePosts() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            currentPage++;
+            showFloatingLoader();
+            
+            // Simulate loading more posts
+            setTimeout(() => {
+                const newPosts = generateMorePosts(currentPage);
+                feedGrid.insertAdjacentHTML('beforeend', newPosts);
+                isLoading = false;
+                hideFloatingLoader();
+            }, 1000);
+        }
+        
+        function generateMorePosts(page) {
+            const posts = [
+                { name: '拉布拉多主人', likes: 567, title: '拉布拉多的游泳训练', breed: '拉布拉多', seed: 'labrador' },
+                { name: '暹罗猫达人', likes: 4320, title: '暹罗猫的优雅姿态', breed: '暹罗猫', seed: 'siamese' },
+                { name: '比熊妈妈', likes: 789, title: '比熊宝宝的日常护理', breed: '比熊', seed: 'bichon' },
+                { name: '缅因猫专家', likes: 234, title: '缅因猫的饲养心得', breed: '缅因猫', seed: 'mainecoon' },
+                { name: '泰迪铲屎官', likes: 15678, title: '泰迪的美容造型分享', breed: '泰迪', seed: 'poodle' },
+                { name: '布偶猫爱好者', likes: 901, title: '布偶猫的温柔时光', breed: '布偶猫', seed: 'ragdoll' },
+                { name: '边牧训练师', likes: 823, title: '边境牧羊犬的智力游戏', breed: '边境牧羊犬', seed: 'bordercollie' },
+                { name: '宠物营养师', likes: 3456, title: '宠物营养搭配指南', breed: '宠物营养', seed: 'pet-nutrition' }
+            ];
+            
+            let html = '';
+            const startIndex = (page - 2) * 4; // Start from post 9 onwards
+            
+            for (let i = 0; i < 4; i++) {
+                const postIndex = (startIndex + i) % posts.length;
+                const post = posts[postIndex];
+                const postId = (page - 1) * 4 + i + 1;
+                
+                html += `
+                    <div class="feed-post" onclick="viewPost(${postId})">
+                        <div class="image-area">
+                            <img src="https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=400&h=400&fit=crop" alt="${post.breed}">
+                        </div>
+                        <div class="content-area">
+                            <h3 class="post-title">${post.title}</h3>
+                            <div class="author-info">
+                                <div class="author-name">${post.name}</div>
+                                <div class="interaction-data">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${formatLikeCount(post.likes)}</span>
+                                </div>
+                              </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+        
+        // Add scroll event listener
+        feedGrid.addEventListener('scroll', function() {
+            if (feedGrid.scrollTop + feedGrid.clientHeight >= feedGrid.scrollHeight - 100) {
+                loadMorePosts();
+            }
+        });
+        
+        // Floating loading indicator
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'floating-loader';
+        loadingIndicator.className = 'floating-loader';
+        loadingIndicator.style.display = 'none';
+        loadingIndicator.innerHTML = '<div class="loader-spinner"></div>';
+        document.body.appendChild(loadingIndicator);
+        
+        function showFloatingLoader() {
+            loadingIndicator.style.display = 'block';
+        }
+        
+        function hideFloatingLoader() {
+            loadingIndicator.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

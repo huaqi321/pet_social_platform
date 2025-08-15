@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布中心 - 毛孩子</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Publish Options */
+        .publish-option {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .publish-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .publish-option:hover::before {
+            left: 100%;
+        }
+        
+        .publish-option:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .publish-option:active {
+            transform: translateY(-4px);
+        }
+        
+        .publish-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .publish-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(10px);
+            opacity: 0.6;
+            z-index: -1;
+        }
+        
+        .icon-post {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+        }
+        
+        .icon-question {
+            background: linear-gradient(135deg, #FFAB91 0%, #FF8A65 100%);
+        }
+        
+        .icon-experience {
+            background: linear-gradient(135deg, #FFCC80 0%, #FFB74D 100%);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Form Elements */
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: #f9fafb;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #FF8A65;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 138, 101, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            background: #f9fafb;
+        }
+        
+        .upload-area:hover {
+            border-color: #FF8A65;
+            background: #FFF3E0;
+        }
+        
+        .upload-area.dragover {
+            border-color: #FF8A65;
+            background: #FFE0B3;
+        }
+        
+        /* Tag Input */
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            min-height: 48px;
+            align-items: center;
+            cursor: text;
+        }
+        
+        .tag {
+            background: #FF8A65;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .tag-remove {
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        
+        .tag-remove:hover {
+            opacity: 1;
+        }
+        
+        /* Character Counter */
+        .char-counter {
+            font-size: 12px;
+            color: #6b7280;
+            text-align: right;
+        }
+        
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+        
+        .char-counter.danger {
+            color: #ef4444;
+        }
+        
+        /* Action Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 138, 101, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 138, 101, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Pet Selector */
+        .pet-selector {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        
+        .pet-option {
+            flex: 0 0 auto;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px;
+            border-radius: 12px;
+        }
+        
+        .pet-option:hover {
+            background: #f3f4f6;
+        }
+        
+        .pet-option.selected {
+            background: #FFE0B3;
+            border: 2px solid #FF8A65;
+        }
+        
+        .pet-option img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .pet-option.selected img {
+            border-color: #FF8A65;
+        }
+        
+        /* Privacy Settings */
+        .privacy-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .privacy-option:hover {
+            background: #f9fafb;
+        }
+        
+        .privacy-option.selected {
+            border-color: #FF8A65;
+            background: #FFE0B3;
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #FF8A65;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="p-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">分享你的养宠生活</h1>
+            <p class="text-gray-600">记录美好瞬间，交流养宠经验</p>
+        </div>
+        
+        <!-- Publish Options -->
+        <div class="grid grid-cols-1 gap-6 mb-8">
+            <!-- Post Option -->
+            <div class="publish-option" onclick="openModal('post')">
+                <div class="publish-icon icon-post">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">发布动态</h3>
+                <p class="text-gray-600 text-sm">分享宠物的日常瞬间，记录美好生活</p>
+                <div class="flex justify-center gap-2 mt-4">
+                    <span class="text-xs bg-purple-100 text-purple-600 px-3 py-1 rounded-full">图文动态</span>
+                    <span class="text-xs bg-purple-100 text-purple-600 px-3 py-1 rounded-full">视频分享</span>
+                    <span class="text-xs bg-purple-100 text-purple-600 px-3 py-1 rounded-full">位置标记</span>
+                </div>
+            </div>
+            
+            <!-- Question Option -->
+            <div class="publish-option" onclick="openModal('question')">
+                <div class="publish-icon icon-question">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">发起提问</h3>
+                <p class="text-gray-600 text-sm">向社区求助，解决养宠难题</p>
+                <div class="flex justify-center gap-2 mt-4">
+                    <span class="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full">悬赏问答</span>
+                    <span class="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full">专家解答</span>
+                    <span class="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full">匿名提问</span>
+                </div>
+            </div>
+            
+            <!-- Experience Option -->
+            <div class="publish-option" onclick="openModal('experience')">
+                <div class="publish-icon icon-experience">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">分享经验</h3>
+                <p class="text-gray-600 text-sm">传授养宠心得，帮助更多宠友</p>
+                <div class="flex justify-center gap-2 mt-4">
+                    <span class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">经验教程</span>
+                    <span class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">知识分享</span>
+                    <span class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">技巧传授</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-20 p-4 shadow-sm">
+            <h3 class="font-semibold text-gray-800 mb-3">最近发布</h3>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=40&h=40&fit=crop&crop=face" alt="宠物" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">小布丁的日常</div>
+                        <div class="text-xs text-gray-500">2小时前发布</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=40&h=40&fit=crop&crop=face" alt="宠物" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">猫咪护理小技巧</div>
+                        <div class="text-xs text-gray-500">昨天发布</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Post Modal -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">发布动态</h3>
+                    <button onclick="closeModal('postModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <!-- Pet Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择宠物</label>
+                    <div class="pet-selector">
+                        <div class="pet-option selected" onclick="selectPet(this)">
+                            <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=50&h=50&fit=crop&crop=face" alt="小布丁">
+                            <div class="text-xs mt-1">小布丁</div>
+                        </div>
+                        <div class="pet-option" onclick="selectPet(this)">
+                            <img src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=50&h=50&fit=crop&crop=face" alt="雪球">
+                            <div class="text-xs mt-1">雪球</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content Input -->
+                <div class="mb-4">
+                    <textarea class="form-input form-textarea" placeholder="分享此刻的时光..." maxlength="500" onkeyup="updateCharCount(this, 'postCharCount')"></textarea>
+                    <div class="char-counter" id="postCharCount">0/500</div>
+                </div>
+                
+                <!-- Media Upload -->
+                <div class="mb-4">
+                    <div class="upload-area" onclick="document.getElementById('postMedia').click()">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">点击上传图片或视频</p>
+                        <p class="text-xs text-gray-500 mt-1">支持图片最多9张，视频1个</p>
+                    </div>
+                    <input type="file" id="postMedia" multiple accept="image/*,video/*" style="display: none;">
+                </div>
+                
+                <!-- Tags -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">添加话题</label>
+                    <div class="tag-input" onclick="focusTagInput(this)">
+                        <span class="tag">#萌宠 <span class="tag-remove" onclick="removeTag(this)">×</span></span>
+                        <input type="text" placeholder="添加话题标签..." class="flex-1 outline-none">
+                    </div>
+                </div>
+                
+                <!-- Privacy Settings -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">谁可以看到</label>
+                    <div class="space-y-2">
+                        <div class="privacy-option selected" onclick="selectPrivacy(this)">
+                            <i class="fas fa-globe text-blue-500"></i>
+                            <div>
+                                <div class="font-medium">公开</div>
+                                <div class="text-xs text-gray-500">所有人可见</div>
+                            </div>
+                        </div>
+                        <div class="privacy-option" onclick="selectPrivacy(this)">
+                            <i class="fas fa-users text-gray-400"></i>
+                            <div>
+                                <div class="font-medium">关注者</div>
+                                <div class="text-xs text-gray-500">只有关注你的人可见</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button class="btn-primary flex-1" onclick="publishPost()">发布</button>
+                    <button class="btn-secondary" onclick="saveDraft('post')">存草稿</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Question Modal -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">发起提问</h3>
+                    <button onclick="closeModal('questionModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <!-- Pet Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">相关宠物</label>
+                    <div class="pet-selector">
+                        <div class="pet-option selected" onclick="selectPet(this)">
+                            <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=50&h=50&fit=crop&crop=face" alt="小布丁">
+                            <div class="text-xs mt-1">小布丁</div>
+                        </div>
+                        <div class="pet-option" onclick="selectPet(this)">
+                            <img src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=50&h=50&fit=crop&crop=face" alt="雪球">
+                            <div class="text-xs mt-1">雪球</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Question Title -->
+                <div class="mb-4">
+                    <input type="text" class="form-input" placeholder="简要描述你的问题..." maxlength="50" onkeyup="updateCharCount(this, 'questionTitleCount')">
+                    <div class="char-counter" id="questionTitleCount">0/50</div>
+                </div>
+                
+                <!-- Question Details -->
+                <div class="mb-4">
+                    <textarea class="form-input form-textarea" placeholder="详细描述问题情况，包括症状、持续时间等..." maxlength="500" onkeyup="updateCharCount(this, 'questionDescCount')"></textarea>
+                    <div class="char-counter" id="questionDescCount">0/500</div>
+                </div>
+                
+                <!-- Image Upload -->
+                <div class="mb-4">
+                    <div class="upload-area" onclick="document.getElementById('questionMedia').click()">
+                        <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">上传相关图片</p>
+                        <p class="text-xs text-gray-500 mt-1">最多3张，有助于更好地理解问题</p>
+                    </div>
+                    <input type="file" id="questionMedia" multiple accept="image/*" style="display: none;">
+                </div>
+                
+                <!-- Category Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">问题分类</label>
+                    <select class="form-input">
+                        <option>健康问题</option>
+                        <option>行为问题</option>
+                        <option>饮食问题</option>
+                        <option>护理问题</option>
+                        <option>训练问题</option>
+                    </select>
+                </div>
+                
+                <!-- Reward Setting -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">悬赏金额（可选）</label>
+                    <div class="flex gap-2">
+                        <input type="number" class="form-input flex-1" placeholder="设置悬赏金额" min="1" max="100">
+                        <span class="flex items-center px-3 text-gray-500">元</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">设置悬赏可以获得更多优质回答</p>
+                </div>
+                
+                <!-- Anonymous Option -->
+                <div class="mb-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 text-blue-600">
+                        <span class="text-sm text-gray-700">匿名提问</span>
+                    </label>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button class="btn-primary flex-1" onclick="publishQuestion()">发布问题</button>
+                    <button class="btn-secondary" onclick="saveDraft('question')">存草稿</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Experience Modal -->
+    <div id="experienceModal" class="modal">
+        <div class="modal-content">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">分享经验</h3>
+                    <button onclick="closeModal('experienceModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <!-- Experience Title -->
+                <div class="mb-4">
+                    <input type="text" class="form-input" placeholder="给你的经验起个标题..." maxlength="30" onkeyup="updateCharCount(this, 'expTitleCount')">
+                    <div class="char-counter" id="expTitleCount">0/30</div>
+                </div>
+                
+                <!-- Experience Category -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">经验分类</label>
+                    <select class="form-input">
+                        <option>健康护理</option>
+                        <option>行为训练</option>
+                        <option>饮食营养</option>
+                        <option>日常护理</option>
+                        <option>疾病预防</option>
+                    </select>
+                </div>
+                
+                <!-- Pet Type -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">适用宠物</label>
+                    <div class="flex gap-2">
+                        <label class="flex items-center gap-1">
+                            <input type="checkbox" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm">猫咪</span>
+                        </label>
+                        <label class="flex items-center gap-1">
+                            <input type="checkbox" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm">狗狗</span>
+                        </label>
+                        <label class="flex items-center gap-1">
+                            <input type="checkbox" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm">其他</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Experience Content -->
+                <div class="mb-4">
+                    <textarea class="form-input form-textarea" placeholder="详细分享你的经验心得..." maxlength="2000" onkeyup="updateCharCount(this, 'expContentCount')"></textarea>
+                    <div class="char-counter" id="expContentCount">0/2000</div>
+                </div>
+                
+                <!-- Image Upload -->
+                <div class="mb-4">
+                    <div class="upload-area" onclick="document.getElementById('expMedia').click()">
+                        <i class="fas fa-images text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">上传配图</p>
+                        <p class="text-xs text-gray-500 mt-1">最多6张，图文结合效果更好</p>
+                    </div>
+                    <input type="file" id="expMedia" multiple accept="image/*" style="display: none;">
+                </div>
+                
+                <!-- Tags -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">添加标签</label>
+                    <div class="tag-input" onclick="focusTagInput(this)">
+                        <input type="text" placeholder="添加标签便于搜索..." class="flex-1 outline-none">
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button class="btn-primary flex-1" onclick="publishExperience()">发布经验</button>
+                    <button class="btn-secondary" onclick="saveDraft('experience')">存草稿</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="modal">
+        <div class="text-center">
+            <div class="spinner"></div>
+            <p class="mt-4 text-gray-600">正在发布...</p>
+        </div>
+    </div>
+    
+    <script>
+        function openModal(type) {
+            const modal = document.getElementById(type + 'Modal');
+            modal.classList.add('show');
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('show');
+        }
+        
+        function selectPet(element) {
+            document.querySelectorAll('.pet-option').forEach(pet => {
+                pet.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+        
+        function selectPrivacy(element) {
+            document.querySelectorAll('.privacy-option').forEach(privacy => {
+                privacy.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+        
+        function updateCharCount(input, counterId) {
+            const counter = document.getElementById(counterId);
+            const current = input.value.length;
+            const max = input.maxLength;
+            counter.textContent = `${current}/${max}`;
+            
+            if (current > max * 0.9) {
+                counter.classList.add('danger');
+            } else if (current > max * 0.7) {
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('warning', 'danger');
+            }
+        }
+        
+        function focusTagInput(element) {
+            const input = element.querySelector('input');
+            input.focus();
+        }
+        
+        function removeTag(element) {
+            element.parentElement.remove();
+        }
+        
+        function publishPost() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                closeModal('postModal');
+                alert('动态发布成功！');
+            }, 2000);
+        }
+        
+        function publishQuestion() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                closeModal('questionModal');
+                alert('问题发布成功！');
+            }, 2000);
+        }
+        
+        function publishExperience() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                closeModal('experienceModal');
+                alert('经验发布成功！');
+            }, 2000);
+        }
+        
+        function saveDraft(type) {
+            alert('草稿已保存');
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+        
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+        
+        // File upload handling
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    alert(`已选择 ${files.length} 个文件`);
+                }
+            });
+        });
+        
+        // Drag and drop functionality
+        document.querySelectorAll('.upload-area').forEach(area => {
+            area.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            area.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            area.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    alert(`拖拽上传 ${files.length} 个文件`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息 - 毛孩子</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Tab Navigation */
+        .message-tab {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2px;
+            display: flex;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+        }
+        
+        .message-tab-item.active {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 138, 101, 0.4);
+        }
+        
+        .message-tab-item:hover:not(.active) {
+            background: #f3f4f6;
+        }
+        
+        /* Message Item Styles */
+        .message-item {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        /* Message Tab Content */
+        .message-tab-content {
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            padding-bottom: 60px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .message-tab-content::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .message-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .message-item.unread {
+            background: linear-gradient(to right, #fff, #FFF3E0);
+            border-left: 4px solid #FF8A65;
+        }
+        
+        .message-item.unread::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            background: #FF8A65;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 138, 101, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 138, 101, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 138, 101, 0); }
+        }
+        
+        /* Chat Interface */
+        .chat-interface {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: #fff;
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8f9fa;
+        }
+        
+        .chat-input {
+            background: #fff;
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+        
+        .message-bubble.sent {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-bubble.received {
+            background: #fff;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #FF8A65;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+            animation: bounce 2s infinite;
+        }
+        
+        .notification-badge::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: rgba(255, 138, 101, 0.3);
+            border-radius: 14px;
+            z-index: -1;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
+        }
+        
+        /* Reminder Card */
+        .reminder-card {
+            background: linear-gradient(135deg, #FFE0B3 0%, #FFCC80 100%);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #FF8A65;
+            transition: all 0.2s;
+        }
+        
+        .reminder-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(255, 138, 101, 0.3);
+        }
+        
+        .reminder-card.completed {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left-color: #10b981;
+        }
+        
+        .reminder-card.overdue {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: #ef4444;
+        }
+        
+        /* Interactive Elements */
+        .interactive-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .interactive-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .interactive-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Message Actions */
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn.primary {
+            background: #FF8A65;
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* System Notification */
+        .system-notification {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+        
+        .system-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .system-icon.announcement {
+            background: linear-gradient(135deg, #FF8A65 0%, #E65100 100%);
+        }
+        
+        .system-icon.activity {
+            background: linear-gradient(135deg, #FFAB91 0%, #FF8A65 100%);
+        }
+        
+        .system-icon.update {
+            background: linear-gradient(135deg, #FFCC80 0%, #FFB74D 100%);
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .quick-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-weight: 500;
+        }
+        
+        .quick-action-btn.primary {
+            background: #FF8A65;
+            color: white;
+        }
+        
+        .quick-actionbtn.secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Floating Loading Indicator */
+        .floating-loader {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50px;
+            padding: 12px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 138, 101, 0.2);
+            display: none;
+        }
+        
+        .loader-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #FF8A65;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="p-4 h-full flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">消息</h1>
+            <button class="interactive-btn text-gray-600" onclick="markAllAsRead()">
+                <i class="fas fa-check-double"></i> 一键已读
+            </button>
+        </div>
+        
+        <!-- Message Tabs -->
+        <div class="message-tab">
+            <div class="message-tab-item active" onclick="switchMessageTab('likes')">
+                <i class="fas fa-heart mr-1"></i>
+                赞和收藏
+                <div class="notification-badge">8</div>
+            </div>
+            <div class="message-tab-item" onclick="switchMessageTab('comments')">
+                <i class="fas fa-comment mr-1"></i>
+                评论和@
+                <div class="notification-badge">15</div>
+            </div>
+            <div class="message-tab-item" onclick="switchMessageTab('follows')">
+                <i class="fas fa-user-plus mr-1"></i>
+                新增关注
+                <div class="notification-badge">3</div>
+            </div>
+        </div>
+        
+        <!-- Likes and Favorites Tab -->
+        <div id="likes-tab" class="message-tab-content flex-1 overflow-y-auto">
+            <div class="message-item" onclick="viewMessageDetail(1)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">猫咪专家</div>
+                        <div class="text-sm text-gray-600">赞了你的动态《分享一个猫咪护理小贴士》</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=60&h=60&fit=crop" alt="缩略图" class="w-12 h-12 rounded-lg object-cover">
+                        <span class="text-xs text-gray-500">5分钟前</span>
+                    </div>
+                    <div class="notification-badge">1</div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(2)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">金毛妈妈</div>
+                        <div class="text-sm text-gray-600">收藏了你的动态《金毛海边玩耍》</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=60&h=60&fit=crop" alt="缩略图" class="w-12 h-12 rounded-lg object-cover">
+                        <span class="text-xs text-gray-500">15分钟前</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(3)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">柯基铲屎官</div>
+                        <div class="text-sm text-gray-600">赞了你的回答《如何给猫咪剪指甲》</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">1小时前</span>
+                    </div>
+                    <div class="notification-badge">99</div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(4)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1605460375648-6e191075ab8b?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">哈士奇爸爸</div>
+                        <div class="text-sm text-gray-600">赞了你的动态《狗狗训练心得》</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <img src="https://images.unsplash.com/photo-1605460375648-6e191075ab8b?w=60&h=60&fit=crop" alt="缩略图" class="w-12 h-12 rounded-lg object-cover">
+                        <span class="text-xs text-gray-500">2小时前</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comments and @ Tab -->
+        <div id="comments-tab" class="message-tab-content flex-1 overflow-y-auto" style="display: none;">
+            <div class="message-item unread" onclick="viewMessageDetail(5)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">猫咪专家</div>
+                        <div class="text-sm text-gray-600">评论了你的动态：这个方法很有用，我家猫咪...</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=60&h=60&fit=crop" alt="缩略图" class="w-12 h-12 rounded-lg object-cover">
+                        <span class="text-xs text-gray-500">10分钟前</span>
+                    </div>
+                    <div class="notification-badge">2</div>
+                </div>
+            </div>
+            
+            <div class="message-item unread" onclick="viewMessageDetail(6)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">金毛妈妈</div>
+                        <div class="text-sm text-gray-600">在评论中@了你：谢谢分享，学到了很多...</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">30分钟前</span>
+                    </div>
+                    <div class="notification-badge">5</div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(7)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">柯基铲屎官</div>
+                        <div class="text-sm text-gray-600">回复了你的评论：谢谢你的建议，我会试试...</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">1小时前</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(8)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">布丁主人</div>
+                        <div class="text-sm text-gray-600">评论了你的问答回答：非常详细的解答...</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">2小时前</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Followers Tab -->
+        <div id="follows-tab" class="message-tab-content flex-1 overflow-y-auto" style="display: none;">
+            <div class="message-item unread" onclick="viewMessageDetail(9)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">猫咪专家</div>
+                        <div class="text-sm text-gray-600">关注了你</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">刚刚</span>
+                    </div>
+                    <div class="notification-badge">1</div>
+                </div>
+            </div>
+            
+            <div class="message-item unread" onclick="viewMessageDetail(10)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">金毛妈妈</div>
+                        <div class="text-sm text-gray-600">关注了你</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">5分钟前</span>
+                    </div>
+                    <div class="notification-badge">2</div>
+                </div>
+            </div>
+            
+            <div class="message-item" onclick="viewMessageDetail(11)">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face" alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">柯基铲屎官</div>
+                        <div class="text-sm text-gray-600">关注了你</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs text-gray-500">1小时前</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating Loading Indicator -->
+    <div id="floating-loader" class="floating-loader">
+        <div class="loader-spinner"></div>
+    </div>
+    
+    <script>
+          
+        function viewMessageDetail(messageId) {
+            alert(`查看消息详情 #${messageId}`);
+        }
+        
+        function markAllAsRead() {
+            document.querySelectorAll('.message-item.unread').forEach(item => {
+                item.classList.remove('unread');
+            });
+            document.querySelectorAll('.notification-badge').forEach(badge => {
+                badge.style.display = 'none';
+            });
+            alert('所有消息已标记为已读');
+        }
+        
+        function showMessageSettings() {
+            alert('消息设置：\n- 推送通知设置\n- 消息免打扰\n- 消息清理规则');
+        }
+        
+        function viewAnnouncement() {
+            alert('查看公告详情');
+        }
+        
+        function dismissNotification(element) {
+            element.closest('.system-notification').style.display = 'none';
+        }
+        
+        function joinActivity() {
+            alert('跳转到活动页面');
+        }
+        
+        function updateApp() {
+            alert('正在检查更新...');
+        }
+        
+        function viewInteraction(type) {
+            switch(type) {
+                case 'like':
+                    alert('查看点赞详情');
+                    break;
+                case 'comment':
+                    alert('查看评论详情');
+                    break;
+                case 'follow':
+                    alert('查看用户主页');
+                    break;
+                case 'adopt':
+                    alert('查看悬赏详情');
+                    break;
+            }
+        }
+        
+        function followBack(event) {
+            event.stopPropagation();
+            alert('已关注');
+        }
+        
+        function viewProfile(event) {
+            event.stopPropagation();
+            alert('查看用户主页');
+        }
+        
+        function openChat(userName) {
+            document.getElementById('chat-list').style.display = 'none';
+            document.getElementById('chat-interface').style.display = 'flex';
+            document.getElementById('chat-name').textContent = userName;
+            
+            // Load chat messages
+            loadChatMessages(userName);
+        }
+        
+        function closeChat() {
+            document.getElementById('chat-interface').style.display = 'none';
+            document.getElementById('chat-list').style.display = 'block';
+        }
+        
+        function loadChatMessages(userName) {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            // Sample messages
+            const messages = [
+                { type: 'received', text: '你好，关于猫咪护理的问题想请教你', time: '14:30' },
+                { type: 'sent', text: '你好，请问有什么问题？', time: '14:32' },
+                { type: 'received', text: '我家猫咪最近不爱吃东西，有什么办法吗？', time: '14:33' },
+                { type: 'sent', text: '可以先检查一下是否有其他症状，比如精神状态、排便情况等', time: '14:35' },
+                { type: 'received', text: '其他都正常，就是不爱吃猫粮', time: '14:36' },
+                { type: 'sent', text: '可以试试换一种猫粮，或者加点猫罐头拌着吃', time: '14:38' },
+                { type: 'received', text: '好的，我试试，谢谢！', time: '14:40' },
+                { type: 'sent', text: '不客气，有问题随时问我', time: '14:41' }
+            ];
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${msg.type === 'sent' ? 'justify-end' : 'justify-start'}`;
+                messageDiv.innerHTML = `
+                    <div class="message-bubble ${msg.type}">
+                        <div>${msg.text}</div>
+                        <div class="message-time">${msg.time}</div>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function completeReminder(element) {
+            const card = element.closest('.reminder-card');
+            card.classList.add('completed');
+            card.classList.remove('overdue');
+            alert('提醒已标记为完成');
+        }
+        
+        function snoozeReminder(element) {
+            alert('提醒已延期1天');
+        }
+        
+        function viewPetRecord() {
+            alert('查看宠物记录');
+        }
+        
+        function recordWeight() {
+            alert('跳转到体重记录页面');
+        }
+        
+        function viewMedicalRecord() {
+            alert('查看医疗记录');
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+        
+        // Floating loader functions
+        function showFloatingLoader() {
+            document.getElementById('floating-loader').style.display = 'block';
+        }
+        
+        function hideFloatingLoader() {
+            document.getElementById('floating-loader').style.display = 'none';
+        }
+        
+        // Simulate loading when switching tabs
+        function switchMessageTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.message-tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show loading indicator
+            showFloatingLoader();
+            
+            // Simulate loading delay
+            setTimeout(() => {
+                // Update tab content
+                document.querySelectorAll('.message-tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.getElementById(tabName + '-tab').style.display = 'block';
+                hideFloatingLoader();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
